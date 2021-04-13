@@ -4,51 +4,48 @@ using System.Windows.Forms;
 using Newtonsoft.Json;
 using RestSharp;
 
-namespace UAUpload
+namespace UNOSInterface
 {
-    class api
+    class API
     {
-        public static string RequestPasswordToken(string userName, string passWord)
+        public static string RequestAuthToken(string userName, string passWord, string grantType, string refreshToken = "")
         {
-            string url = "https://api-beta.unos.org/oauth/accesstoken";
-            string client_id = "";
-            string client_secret = "";
-            //request token
-            var restclient = new RestSharp.RestClient(url);
-            RestRequest request = new RestRequest("request/oauth") { Method = Method.POST };
-            request.AddHeader("Accept", "application/json");
-            request.AddHeader("Content-Type", "application/x-www-form-urlencoded");
-            request.AddParameter("client_id", client_id);
-            request.AddParameter("username", userName);
-            request.AddParameter("password", passWord);
-            request.AddParameter("client_secret", client_secret);
-            request.AddParameter("grant_type", "password");
-            var tResponse = restclient.Execute(request);
-            var responseJson = tResponse.Content;
-            var token = JsonConvert.DeserializeObject<Dictionary<string, object>>(responseJson)["access_token"].ToString();
-            return token.Length > 0 ? token : null;
-            return responseJson;
+            string baseURL = "";
+            var request = new RestRequest(Method.POST);
+            if (grantType == "password")
+            {
+                baseURL = "https://api-beta.unos.org/oauth/accesstoken?grant_type=password";
+                request.AddHeader("Content-Type", "application/x-www-form-urlencoded");
+                request.AddParameter("username", userName);
+                request.AddParameter("password", passWord);
+            }
+            else if (grantType == "refresh")
+            {
+                baseURL =
+                    "https://api-beta.unos.org/oauth/accesstoken?grant_type=refresh_token&refresh_token=" + refreshToken;
+            }
+            else if (grantType == "cc")
+            {
+                baseURL = "https://api-beta.unos.org/oauth/accesstoken?grant_type=client_credentials";
+            }
+
+            request.AddHeader("Authorization", "Basic SE1XUlhRSGUwVkFzeUdRRmJ4cHE2SFhYWTJmYzVHU2Y6eVZTazNFT0RCYWFaUE9VeQ==");
+            var client = new RestClient(baseURL);
+            IRestResponse response = client.Execute(request);
+            //var token = JsonConvert.DeserializeObject<Dictionary<string, object>>(response.Content)["access_token"].ToString();
+            return response.Content;
         }
 
-        public static string RefreshPasswordToken(string userName, string passWord)
+        public static string GetClientCredentialsToken()
         {
-            string url = "https://api-beta.unos.org/oauth/accesstoken";
-            string client_id = "";
-            string client_secret = "";
-            var restclient = new RestSharp.RestClient(url);
-            RestRequest request = new RestRequest("request/oauth") { Method = Method.POST };
-            request.AddParameter("client_id", client_id);
-            request.AddParameter("username", userName);
-            request.AddParameter("password", passWord);
-            request.AddParameter("client_secret", client_secret);
-            request.AddParameter("grant_type", "password");
-            var tResponse = restclient.Execute(request);
-            var responseJson = tResponse.Content;
-            //var token = JsonConvert.DeserializeObject<Dictionary<string, object>>(responseJson)["access_token"].ToString();
-            //return token.Length > 0 ? token : null;
-            return responseJson;
+            var client = new RestClient("https://api-beta.unos.org/oauth/accesstoken?grant_type=client_credentials");
+            client.Timeout = -1;
+            var request = new RestRequest(Method.POST);
+            request.AddHeader("Authorization", "Basic SE1XUlhRSGUwVkFzeUdRRmJ4cHE2SFhYWTJmYzVHU2Y6eVZTazNFT0RCYWFaUE9VeQ==");
+            IRestResponse response = client.Execute(request);
+            var token = JsonConvert.DeserializeObject<Dictionary<string, object>>(response.Content)["access_token"].ToString();
+            return token;
         }
-
 
         public static void GetUA()
         {
@@ -58,9 +55,9 @@ namespace UAUpload
             request.AddHeader("X-Center-Code", "CCCC");
             request.AddHeader("X-Center-Type", "TX1");
             request.AddHeader("X-Program-Type", "KI");
-            request.AddHeader("Authorization", "Bearer 4HWlcxfSIzY5ulqiEbNp35RdMWut");
+            request.AddHeader("Authorization", "Bearer HdeIM1QkYCJsyzLlCTUAoHQZmLeV");
             IRestResponse response = client.Execute(request);
-            Console.WriteLine(response.Content);
+            //Console.WriteLine(response.Content);
             MessageBox.Show(response.Content);
         }
 
